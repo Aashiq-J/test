@@ -9,11 +9,11 @@
         cluster_resource_group_id: "{{ lookup('env', 'cluster_resource_group_id') }}"
         cloud_logs_ingress_endpoint: "{{ lookup('env', 'cloud_logs_ingress_endpoint') }}"
 
-    # - name: Install a specific collection from Ansible Galaxy
-    #   community.general.ansible_galaxy_install:
-    #     type: collection
-    #     name: ibm.cloudcollection # Replace with the desired collection name
-    #     state: present
+    - name: Install a specific collection from Ansible Galaxy
+      community.general.ansible_galaxy_install:
+        type: collection
+        name: ibm.cloudcollection # Replace with the desired collection name
+        state: present
 
     - name: Extract value instance ID
       set_fact:
