@@ -1,0 +1,40 @@
+- name: post deploy playbook
+  hosts: localhost
+  tasks:
+    - name: get running ansible env variables
+      set_fact:
+        # workspace_id: "{{ lookup('env', 'workspace_id') }}"
+        ibmcloud_api_key: "{{ lookup('env', 'ibmcloud_api_key')}}" # pragma: allowlist secret
+        cluster_id: "{{ lookup('env', 'cluster_id') }}"
+        cluster_resource_group_id: "{{ lookup('env', 'cluster_resource_group_id') }}"
+        cloud_logs_ingress_endpoint: "{{ lookup('env', 'cloud_logs_ingress_endpoint') }}"
+
+    # - name: Install a specific collection from Ansible Galaxy
+    #   community.general.ansible_galaxy_install:
+    #     type: collection
+    #     name: ibm.cloudcollection # Replace with the desired collection name
+    #     state: present
+
+    - name: Extract value instance ID
+      set_fact:
+        instance: "{{ cloud_logs_ingress_endpoint | regex_replace('\\.ingress.*$', '') }}"
+
+    - name: Check is cluster exists
+      ibm.cloudcollection.ibm_container_vpc_cluster_info:
+        name: "{{ cluster_id }}"
+        ibmcloud_api_key: "{{ ibmcloud_api_key }}"
+        resource_group_id: "{{ cluster_resource_group_id }}"
+      failed_when:
+        - cluster_output.rc != 0
+      register: cluster_output
+
+    - debug:
+        var: cluster_output.resource.crn
+    - name: Attach tags
+      # Use the 'shell' module to execute ibmcloud login and then get the IAM token.
+      # 'no_log: true' prevents sensitive data from appearing in Ansible logs.
+      ansible.builtin.shell: |
+        ibmcloud login --apikey "{{ ibmcloud_api_key }}" --no-region -q >/dev/null 2>&1
+        ibmcloud resource tag-attach --resource-id "{{ cluster_output.resource.crn }}"  --tag-names "logging-instance:{{ instance }}"
+      register: ibmcloud_auth_result
+      changed_when: false
