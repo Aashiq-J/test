@@ -14,14 +14,14 @@
       register: ibmcloud_auth_result
       changed_when: false
       ignore_errors: yes
-      when: "'{{access_key}}' != 'null'"
+      when: access_key is defined and access_key is not none and access_key != ''
     - name: Fetch Instance ID from existing_access_key_secret_name
       ansible.builtin.shell: |
         ibmcloud login --apikey "{{ ibmcloud_api_key }}" --no-region -q >/dev/null 2>&1 && ibmcloud resource service-key "{{ existing_access_key_secret_name }}" -o json | jq -r --arg name "{{ existing_access_key_secret_name }}" '.[] | select(.name == $name).source_crn'
       register: ibmcloud_auth_result
       changed_when: false
       ignore_errors: yes
-      when: "'{{existing_access_key_secret_name}}' != 'null'"
+      when: existing_access_key_secret_name is defined and existing_access_key_secret_name is not none and existing_access_key_secret_name != ''
     - name: Extract value instance ID
       set_fact:
         instance: "{{ ibmcloud_auth_result.stdout | regex_search('[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}') }}"
