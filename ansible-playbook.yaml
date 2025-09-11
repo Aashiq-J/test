@@ -8,6 +8,7 @@
         cluster_id: "{{ lookup('env', 'cluster_id') }}"
         access_key: "{{ lookup('env', 'access_key') }}"
         existing_access_key_secret_name: "{{ lookup('env', 'existing_access_key_secret_name') }}"
+        cluster_resource_group_id: "{{ lookup('env', 'cluster_resource_group_id') }}"
     - name: Fetch Instance ID from access_key
       ansible.builtin.shell: |
         ibmcloud login --apikey "{{ ibmcloud_api_key }}" --no-region -q >/dev/null 2>&1 && ibmcloud resource service-keys -o json | jq -r --arg access_key "{{ access_key }}" '.[] | select(.credentials."Sysdig Access Key" == $access_key).source_crn'
@@ -34,7 +35,7 @@
       ignore_errors: yes
     - name: Attach tags
       ansible.builtin.shell: |
-        ibmcloud login --apikey "{{ ibmcloud_api_key }}" --no-region -q && ibmcloud resource tag-attach --resource-id "$(ibmcloud resource service-instance "{{ cluster_id }}" --crn -q)" --tag-names "monitoring-instance:{{ instance }},mwp-workspace:{{ workspace_id }}" >/dev/null 2>&1
+        ibmcloud login --apikey "{{ ibmcloud_api_key }}" --no-region -g "{{ cluster_resource_group_id }}" -q && ibmcloud resource tag-attach --resource-id "$(ibmcloud resource service-instance "{{ cluster_id }}" --crn -q)" --tag-names "monitoring-instance:{{ instance }},mwp-workspace:{{ workspace_id }}" >/dev/null 2>&1
       register: ibmcloud_result
       changed_when: false
       ignore_errors: yes
