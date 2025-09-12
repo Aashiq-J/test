@@ -20,9 +20,14 @@
           cluster_id="{{ cluster_id }}"
           access_key="{{ access_key }}"
           existing_access_key_secret_name="{{ existing_access_key_secret_name }}"
-          cluster_resource_group_id="{{ cluster_resource_group_id }}"
 
-          ibmcloud login --apikey "$ibmcloud_api_key" --no-region -q >/dev/null 2>&1
+          attempts=1
+          # Expects the environment variable $IBMCLOUD_API_KEY to be set
+          until ibmcloud login --apikey "$ibmcloud_api_key" -q --no-region || [ $attempts -ge 3 ]; do
+              attempts=$((attempts+1))
+              echo "Error logging in to IBM Cloud CLI..." >&2
+              sleep 5
+          done
 
           if [ -n "$access_key" ]; then
             input=$(ibmcloud resource service-keys -o json | jq -r --arg access_key "$access_key" '.[] | select(.credentials."Sysdig Access Key" == $access_key).source_crn')
